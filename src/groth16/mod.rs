@@ -435,6 +435,7 @@ mod tests {
     use pairing::Engine;
     use rand::{SeedableRng, rngs::StdRng};
 
+    use crate::fourier::fourier_coeffs_inv_ff;
     use crate::groth16::Domain;
     use crate::groth16::LagrangeBaseEvaluation;
     use crate::groth16::create_fft_compatible_domain;
@@ -652,5 +653,31 @@ mod tests {
             });
 
         assert_eq!(eval_directly, eval_with_lagrange_base);
+    }
+
+    #[test]
+    fn fourier_lagrange_compatibility() {
+        type Fr = <Bls12 as Engine>::Fr;
+
+        let eval_point = Fr::from_u128(123456);
+
+        let evals_at_fft_base: Vec<_> =
+            vec![1, 3, 5, 7].iter().map(|n| Fr::from_u128(*n)).collect();
+
+        let eval_with_fft =
+            Polynomial::create(fourier_coeffs_inv_ff(&evals_at_fft_base)).evaluate(eval_point);
+
+        let domain_size = evals_at_fft_base.len();
+        let domain = create_fft_compatible_domain::<Fr>(domain_size);
+        let lagrange = LagrangeBaseEvaluation::create(&domain, eval_point);
+
+        let eval_with_lagrange_base = evals_at_fft_base
+            .iter()
+            .enumerate()
+            .fold(Fr::ZERO, |accum, (index, coeff)| {
+                accum + *coeff * lagrange.get_value(index)
+            });
+
+        assert_eq!(eval_with_fft, eval_with_lagrange_base);
     }
 }
