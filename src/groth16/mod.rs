@@ -276,7 +276,7 @@ where
                 g1 * ((beta * u_j_at_tau[i] + alpha * v_j_at_tau[i] + w_j_at_tau[i]) * delta_inv)
             })
             .collect(),
-        lagrange_mod_tau_1: (0..(r1cs.get_n() - 1))
+        lagrange_mod_tau_1: (0..r1cs.get_n())
             .map(|i| g1 * ((lagrange.get_value(i) * (tau_pow_n - E::Fr::ONE)) * delta_inv))
             .collect(),
     };
@@ -333,7 +333,7 @@ fn compute_h<E: Engine, R: R1CS<E::Fr>>(input: &Vec<E::Fr>, r1cs: &R) -> Vec<E::
     let mut h = Vec::new();
     let omega_inv = get_primitive_root::<E::Fr>(n).invert().unwrap();
     let mut omega_inv_power = E::Fr::ONE;
-    for index in 0..(r1cs.get_n() - 1) {
+    for index in 0..r1cs.get_n() {
         let mut eval = u_diff[index] * v[index] + u[index] * v_diff[index] - w_diff[index];
         let h_denominator = (n_as_field_element * omega_inv_power).invert().unwrap();
         eval *= h_denominator;
@@ -390,7 +390,6 @@ where
         + pk.lagrange_mod_tau_1
             .iter()
             .zip(h.iter())
-            .take(r1cs.get_n() - 1)
             .fold(E::G1::identity(), |acc, (c, a)| acc + *c * *a)
         + a_1 * s
         + b_1 * r
