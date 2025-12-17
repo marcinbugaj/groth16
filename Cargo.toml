@@ -1,0 +1,16 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+num-traits = "0.2.14"
+num-complex = "0.4.6"
+num-bigint = "0.4.6"
+num = "0.4.3"
+group = "0.13.0"
+pairing = "0.23.0"
+bls12_381 = { version = "0.8.0", features = ["digest", "group", "pairing"] }
+rand_core = "0.6"
+ff = { version = "0.13", features = ["derive"] }
+rand = { version = "0.8", features = ["std", "std_rng"] }
