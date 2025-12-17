@@ -435,6 +435,9 @@ mod tests {
     use pairing::Engine;
     use rand::{SeedableRng, rngs::StdRng};
 
+    use crate::groth16::Domain;
+    use crate::groth16::LagrangeBaseEvaluation;
+    use crate::groth16::create_fft_compatible_domain;
     use crate::groth16::{
         Column, Polynomial, R1CS, get_primitive_root, prove, setup, verify, verify_r1cs,
     };
@@ -617,5 +620,37 @@ mod tests {
                     .collect()
             }
         );
+    }
+
+    #[test]
+    fn lagrange_test() {
+        type Fr = <Bls12 as Engine>::Fr;
+
+        let polynomial = Polynomial {
+            coeffs: vec![1, 3, 5, 7].iter().map(|n| Fr::from_u128(*n)).collect(),
+        };
+
+        let eval_point = Fr::from_u128(123456);
+
+        let eval_directly = polynomial.evaluate(eval_point);
+
+        let domain_size = 16;
+        let domain = create_fft_compatible_domain::<Fr>(domain_size);
+        let lagrange = LagrangeBaseEvaluation::create(&domain, eval_point);
+
+        let base_coeffs: Vec<_> = domain
+            .points
+            .iter()
+            .map(|w_i| polynomial.evaluate(*w_i))
+            .collect();
+
+        let eval_with_lagrange_base = base_coeffs
+            .iter()
+            .enumerate()
+            .fold(Fr::ZERO, |accum, (index, coeff)| {
+                accum + *coeff * lagrange.get_value(index)
+            });
+
+        assert_eq!(eval_directly, eval_with_lagrange_base);
     }
 }
